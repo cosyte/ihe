@@ -1,0 +1,55 @@
+version: 2
+updates:
+  # The parsers ship zero runtime dependencies, so this is the toolchain: one weekly PR per group.
+  # A release becomes eligible a day after it is published (`cooldown`), which keeps a release that
+  # is pulled within hours out of this repository; security updates are not delayed. Each group
+  # takes minor and patch updates only, so a major update arrives alone, in a pull request of its
+  # own, rather than riding in with the safe bumps.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 1
+    open-pull-requests-limit: 5
+    # Conventional Commits titles with a scope, which the PR title check requires: chore(deps) and
+    # chore(deps-dev). Without `include: scope` the title is `chore: bump ...`, which it refuses.
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      dependencies:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 1
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # From v1.75.0 this action installs actionlint by piping a script from a fork to bash. The
+      # shared CI runs the official rhysd/actionlint release, checked by its SHA-256, instead.
+      - dependency-name: "reviewdog/action-actionlint"
+      # The cosyte/.github reusable workflows are pinned to the commit of a published `workflows-*`
+      # reference and move by hand, with every caller, together. Left to Dependabot, a commit pin
+      # with no version tag is offered the newest commit on cosyte/.github's main, which is not a
+      # published reference.
+      - dependency-name: "cosyte/.github*"
